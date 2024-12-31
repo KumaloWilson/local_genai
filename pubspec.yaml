@@ -1,0 +1,40 @@
+name: local_gen_ai
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_native_splash: ^2.4.3
+  get: ^4.6.6
+  logger: ^2.5.0
+  loading_animation_widget: ^1.3.0
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.2
+  flutter_svg: ^2.0.16
+  dash_chat_2: ^0.0.21
+  hugeicons: ^0.0.7
+  flutter_advanced_drawer: ^1.3.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.2
+
+
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/images/
+    - assets/svg_icons/
+
