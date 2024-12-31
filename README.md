@@ -34,14 +34,20 @@ Before you begin, ensure you have the following installed:
 
 1. Clone the repository:
    ```bash
-   https://github.com/KumaloWilson/Local_genai
-   cd Local_genai
+   git clone https://github.com/KumaloWilson/Local_genai
+   cd local_genai
     ```
 
-Install dependencies:  
-flutter pub get
-Run the app:  
-flutter run
+2. Install dependencies:  
+   ```bash
+   flutter pub get
+    ```
+
+3. Run the app:  
+   ```bash
+   flutter run
+    ```
+
 <hr></hr>
 Model Integration
 Steps to Add New Models
