@@ -1,12 +1,20 @@
+// main.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:local_gen_ai/core/utils/logs.dart';
+import 'bindings/binding.dart';
 import 'core/constants/color_constants.dart';
 import 'core/routes/router.dart';
 import 'features/home/views/home_page.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    await InitialBinding().dependencies();
+    runApp(const MyApp());
+  } catch (e) {
+    DevLogs.logError('Initialization error: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -15,12 +23,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      theme: Palette.lightTheme, // Specify the light theme
-      darkTheme: Palette.darkTheme, // Specify the dark theme
-      themeMode: ThemeMode.system, // Use system theme mode (light/dark)
+      title: 'AI Model Manager',
+      initialBinding: InitialBinding(), // Set initial binding
+      theme: Palette.lightTheme,
+      darkTheme: Palette.darkTheme,
+      themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
       getPages: Routes.routes,
-      home: HomePage()
+      home: const HomePage(),
     );
   }
 }

@@ -56,7 +56,7 @@ class _GeneralButtonState extends State<GeneralButton>
     return GestureDetector(
       onTapDown: (_) => _controller.reverse(),
       onTapUp: (_) async {
-        _controller.forward(); // Restore the scale
+        await _controller.forward(); // Restore the scale
         await Future.delayed(const Duration(milliseconds: 150)); // Wait for the animation to finish
         if (widget.onTap != null) widget.onTap!(); // Perform the action
       },

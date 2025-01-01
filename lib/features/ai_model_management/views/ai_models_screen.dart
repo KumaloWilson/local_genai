@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-import '../models/ai_model.dart';
+import 'package:get/get.dart';
+import 'package:local_gen_ai/widgets/cards/model_card.dart';
+import '../controllers/ai_model_controller.dart';
 
 class AIModelScreen extends StatefulWidget {
   const AIModelScreen({super.key});
@@ -12,111 +12,64 @@ class AIModelScreen extends StatefulWidget {
 }
 
 class _AIModelScreenState extends State<AIModelScreen> {
-  final List<AIModel> models = List.generate(
-    10,
-        (i) => AIModel(
-      name: "Model ${i + 1}",
-      version: "1.${i}",
-      size: "${(i + 1) * 100}MB",
-      isDownloaded: i < 3,
-    ),
-  );
+  final AIModelController _controller = Get.find<AIModelController>();
 
-  bool _isSearching = false;
-  String _searchQuery = "";
-  String _sortBy = "name";
-  bool _offlineOnly = false;
-
-  void _showDownloadProgress(String modelName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.model_training,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No AI Models Found',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Import a local model or check your search filters',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
             ),
-            const SizedBox(width: 16),
-            Text('Downloading $modelName...'),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+          ),
+        ],
+      ).animate()
+          .fadeIn(duration: 600.ms)
+          .slideY(begin: 0.2, end: 0),
     );
   }
 
-  Widget _buildModelCard(AIModel model) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red[300],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Something went wrong',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: (){
 
-    child: ListTile(
-        leading: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(
-              Icons.smart_toy,
-              size: 40,
-              color: model.isDownloaded ? Colors.blue : Colors.grey,
-            ).animate(
-              onPlay: (controller) => controller.repeat(),
-            ).rotate(
-              duration: 2.seconds,
-              begin: 0,
-              end: 0.1,
-            ),
-            if (model.downloadProgress != null)
-              CircularProgressIndicator(
-                value: model.downloadProgress,
-                strokeWidth: 2,
-              ),
-          ],
-        ),
-        title: Text(
-          model.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Version: ${model.version}"),
-            Text("Size: ${model.size}"),
-            Text(
-              model.isDownloaded ? "Status: Downloaded" : "Status: Available",
-              style: TextStyle(
-                color: model.isDownloaded ? Colors.green : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-        trailing: model.isDownloaded
-            ? PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            // Handle actions
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'active',
-              child: Text('Set as Active'),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Text('Delete'),
-            ),
-          ],
-        )
-            : IconButton(
-          icon: const Icon(Icons.download),
-          onPressed: () {
-            _showDownloadProgress(model.name);
-            // Implement download logic
-          },
-        ),
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
       ).animate()
-        .fadeIn(duration: 400.ms)
-        .slideX(begin: 0.2, end: 0)
-        .then()
-        .shimmer(duration: 1.seconds)
+          .fadeIn(duration: 600.ms)
+          .slideY(begin: 0.2, end: 0),
     );
   }
 
@@ -124,31 +77,41 @@ class _AIModelScreenState extends State<AIModelScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _isSearching
-            ? TextField(
+        title: Obx(() => _controller.searchQuery.isEmpty
+            ? const Text(
+          'AI Models',
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16
+          ),
+        )
+            : TextField(
           autofocus: true,
           decoration: const InputDecoration(
             hintText: 'Search models...',
             border: InputBorder.none,
           ),
-          onChanged: (value) => setState(() => _searchQuery = value),
-        )
-            : const Text("AI Models"),
+          onChanged: _controller.setSearchQuery,
+        )),
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () => setState(() => _isSearching = !_isSearching),
+            icon: Obx(() => Icon(
+                _controller.searchQuery.isEmpty ? Icons.search : Icons.close)),
+            onPressed: () {
+              if (_controller.searchQuery.isNotEmpty) {
+                _controller.setSearchQuery('');
+              } else {
+                _controller.setSearchQuery(' ');
+              }
+            },
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
             onSelected: (value) {
-              setState(() {
-                if (value == 'offline') {
-                  _offlineOnly = !_offlineOnly;
-                } else {
-                  _sortBy = value;
-                }
-              });
+              if (value == 'offline') {
+                _controller.toggleOfflineOnly();
+              } else {
+                _controller.setSortBy(value);
+              }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
@@ -165,7 +128,9 @@ class _AIModelScreenState extends State<AIModelScreen> {
                   children: [
                     const Text('Offline Only'),
                     const Spacer(),
-                    if (_offlineOnly) const Icon(Icons.check),
+                    Obx(() => _controller.offlineOnly.value
+                        ? const Icon(Icons.check)
+                        : Container()),
                   ],
                 ),
               ),
@@ -176,10 +141,32 @@ class _AIModelScreenState extends State<AIModelScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: models.length,
-              itemBuilder: (context, index) => _buildModelCard(models[index]),
-            ),
+            child: Obx(() {
+              if (_controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final models = _controller.models;
+
+              if (models == null) {
+                return _buildErrorState();
+              }
+
+              if (models.isEmpty) {
+                return _buildEmptyState();
+              }
+
+              return ListView.builder(
+                itemCount: models.length,
+                itemBuilder: (context, index) {
+                  final model = models[index];
+                  return AIModelCard(
+                    model: model,
+                    controller: _controller,
+                  );
+                },
+              );
+            }),
           ),
           SafeArea(
             child: Padding(
@@ -190,14 +177,14 @@ class _AIModelScreenState extends State<AIModelScreen> {
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
                 ),
-                onPressed: () {
-                  // Implement file picker
+                onPressed: () async {
+                  // Implement file picker logic here
                 },
               ).animate()
                   .fadeIn(delay: 200.ms)
                   .slideY(begin: 0.2, end: 0),
             ),
-          ),
+          )
         ],
       ),
     );
