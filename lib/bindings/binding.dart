@@ -4,6 +4,7 @@ import 'package:local_gen_ai/widgets/snackbar/custom_snackbar.dart';
 import '../../features/ai_model_management/controllers/ai_model_controller.dart';
 import '../../features/ai_model_management/services/download_service.dart';
 import '../../features/offline_storage/services/sqflite_service.dart';
+import '../features/ai_model_management/controllers/download_manager.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -21,6 +22,13 @@ class InitialBinding extends Bindings {
         AIModelController(databaseService, downloadService),
         permanent: true,
       );
+
+      Get.put(
+          DownloadManager(Get.find<DownloadService>(), Get.find<DatabaseService>()),
+          permanent: true
+      );
+
+
     } catch (error) {
       DevLogs.logError('Binding initialization error: $error');
 

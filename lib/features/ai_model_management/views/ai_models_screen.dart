@@ -162,7 +162,6 @@ class _AIModelScreenState extends State<AIModelScreen> {
                   final model = models[index];
                   return AIModelCard(
                     model: model,
-                    controller: _controller,
                   );
                 },
               );

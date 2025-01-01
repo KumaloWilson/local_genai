@@ -5,10 +5,18 @@ import 'package:local_gen_ai/features/ai_model_management/controllers/ai_model_c
 import 'package:local_gen_ai/features/ai_model_management/models/ai_model.dart';
 import 'package:local_gen_ai/widgets/custom_button/general_button.dart';
 
-class AIModelCard extends StatelessWidget {
+import '../../features/ai_model_management/controllers/download_manager.dart';
+
+class AIModelCard extends StatefulWidget {
   final AIModel model;
-  final AIModelController controller;
-  const AIModelCard({super.key, required this.model, required this.controller});
+  const AIModelCard({super.key, required this.model,});
+
+  @override
+  State<AIModelCard> createState() => _AIModelCardState();
+}
+
+class _AIModelCardState extends State<AIModelCard> {
+  final DownloadManager _downloadManager = Get.find<DownloadManager>();
 
   @override
   Widget build(BuildContext context) {
@@ -39,31 +47,40 @@ class AIModelCard extends StatelessWidget {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        Obx(() => Icon(
-                          Icons.smart_toy,
-                          size: 32,
-                          color: model.isDownloaded.value
-                              ? Colors.blue
-                              : Colors.grey.shade400,
-                        ).animate(
-                          onPlay: (controller) => controller.repeat(),
-                        ).rotate(
-                          duration: 2000.ms,
-                          begin: 0,
-                          end: 0.1,
-                        )),
                         Obx(() {
-                          if (model.progress.value > 0 && model.progress.value < 1) {
-                            return CircularProgressIndicator(
-                              value: model.progress.value,
-                              strokeWidth: 2,
-                              backgroundColor: Colors.grey.shade200,
+                          if (widget.model.progress.value > 0 && widget.model.progress.value < 1) {
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${(widget.model.progress.value * 100).toInt()}%',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                CircularProgressIndicator(
+                                  value: widget.model.progress.value,
+                                  strokeWidth: 2,
+                                  backgroundColor: Colors.grey.shade200,
+                                ),
+                              ],
                             );
                           }
-                          return const SizedBox.shrink();
+                          return Icon(
+                            Icons.smart_toy,
+                            size: 32,
+                            color: widget.model.isDownloaded.value ? Colors.blue : Colors.grey.shade400,
+                          ).animate(
+                            onPlay: (controller) => controller.repeat(),
+                          ).rotate(
+                            duration: 2000.ms,
+                            begin: 0,
+                            end: 0.1,
+                          );
                         }),
                       ],
-                    ),
+                    )
                   ),
                   const SizedBox(width: 16),
                   // Model Info
@@ -72,7 +89,7 @@ class AIModelCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          model.name,
+                          widget.model.name,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -80,7 +97,7 @@ class AIModelCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'By ${model.author}',
+                          'By ${widget.model.author}',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 14,
@@ -106,24 +123,24 @@ class AIModelCard extends StatelessWidget {
                   children: [
                     _buildStat(
                       'Type',
-                      model.type,
+                      widget.model.type,
                       Icons.category_outlined,
                     ),
                     _buildStat(
                       'Size',
-                      '${(model.size / 1024 / 1024).toStringAsFixed(2)} MB',
+                      '${(widget.model.size / 1024 / 1024).toStringAsFixed(2)} MB',
                       Icons.data_usage_outlined,
                     ),
                     _buildStat(
                       'Parameters',
-                      '${(model.params / 1000000000).toStringAsFixed(1)}B',
+                      '${(widget.model.params / 1000000000).toStringAsFixed(1)}B',
                       Icons.memory_outlined,
                     ),
                   ],
                 ),
               ),
               const Divider(),
-              Obx(() => model.isDownloaded.value
+              Obx(() => widget.model.isDownloaded.value
                   ? const Row(
                 children: [
                   Expanded(
@@ -173,26 +190,35 @@ class AIModelCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GeneralButton(
+                          onTap: (){
+                            if (_downloadManager.isDownloading(widget.model.id)) {
+                              _downloadManager.cancelDownload(widget.model);
+                            } else {
+                              _downloadManager.startDownload(widget.model);
+                            }
+                          },
                           btnColor: Colors.transparent,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                  Icons.download,
+                                _downloadManager.isDownloading(widget.model.id)
+                                    ? Icons.stop
+                                    : Icons.download,
                                 color: Theme.of(context).primaryColor,
                               ),
-                              SizedBox(
-                                width: 8,
-                              ),
+                              const SizedBox(width: 8),
                               Text(
-                                  'Download',
+                                _downloadManager.isDownloading(widget.model.id)
+                                    ? 'Cancel'
+                                    : 'Download',
                                 style: TextStyle(
-                                  color: Theme.of(context).primaryColor
+                                    color: Theme.of(context).primaryColor
                                 ),
                               )
                             ],
                           )
-                      ),
+                      )
                     ],
                   ),
               ),
