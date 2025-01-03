@@ -19,12 +19,12 @@ class InitialBinding extends Bindings {
 
       // Initialize controller after services are ready
       Get.put<AIModelController>(
-        AIModelController(databaseService, downloadService),
+        AIModelController(databaseService,),
         permanent: true,
       );
 
       Get.put(
-          DownloadManager(Get.find<DownloadService>(), Get.find<DatabaseService>()),
+          DownloadController(Get.find<DownloadService>(), Get.find<DatabaseService>()),
           permanent: true
       );
 

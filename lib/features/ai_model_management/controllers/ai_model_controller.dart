@@ -1,14 +1,11 @@
-import 'dart:io';
 import 'package:get/get.dart';
 import 'package:local_gen_ai/core/utils/logs.dart';
 import '../../../widgets/snackbar/custom_snackbar.dart';
 import '../../offline_storage/services/sqflite_service.dart';
 import '../models/ai_model.dart';
-import '../services/download_service.dart';
 
 class AIModelController extends GetxController {
   final DatabaseService _dbService;
-  final DownloadService _downloadService;
 
   RxList<AIModel> models = <AIModel>[].obs;
   RxBool isLoading = false.obs;
@@ -16,7 +13,7 @@ class AIModelController extends GetxController {
   RxString sortBy = 'name'.obs;
   RxBool offlineOnly = false.obs;
 
-  AIModelController(this._dbService, this._downloadService);
+  AIModelController(this._dbService,);
 
   @override
   Future<void> onInit() async {
@@ -70,57 +67,57 @@ class AIModelController extends GetxController {
         }
       });
   }
-
-  Future<void> downloadModel(AIModel model) async {
-    try {
-      await _downloadService.downloadModel(
-        url: model.downloadUrl!.value,
-        filename: model.filename!,
-        onProgress: (progress) {
-          model.progress!.value = progress;
-        },
-        onComplete: (path) async {
-          model.isDownloaded!.value = true;
-          model.progress!.value = 1.0;
-          await _dbService.saveModel(model);
-          CustomSnackBar.showSuccessSnackbar(message: '${model.name} downloaded successfully');
-        },
-        onError: (error) {
-          DevLogs.logError('Error Failed to download ${model.name}: $error');
-          CustomSnackBar.showErrorSnackbar(message: 'Failed to download ${model.name}: $error');
-        },
-      );
-    } catch (e) {
-      DevLogs.logError('Error Failed to initiate download: $e');
-      CustomSnackBar.showErrorSnackbar(message: 'Failed to initiate download: $e');
-    }
-  }
-
-  Future<void> deleteModel(AIModel model) async {
-    try {
-      // Delete the model's file if it exists
-      final path = await _downloadService.getDownloadPath(model.filename!);
-      final file = File(path);
-      if (await file.exists()) {
-        await file.delete();
-      }
-
-      // Delete the model's record from the database
-      await _dbService.deleteModel(model);
-
-      // Update the model state to reflect the deletion
-      model.isDownloaded!.value = false;
-      model.progress!.value = 0.0;
-
-      // Optionally, reload the models from the database to update the UI
-      await loadModels();
-
-      CustomSnackBar.showSuccessSnackbar(message: '${model.name} deleted successfully');
-    } catch (e) {
-      DevLogs.logError('Error Failed to delete ${model.name}: $e');
-      CustomSnackBar.showErrorSnackbar(message: 'Failed to delete ${model.name}: $e');
-    }
-  }
+  //
+  // Future<void> downloadModel(AIModel model) async {
+  //   try {
+  //     await _downloadService.downloadModel(
+  //       url: model.downloadUrl!.value,
+  //       filename: model.filename!,
+  //       onProgress: (progress) {
+  //         model.progress!.value = progress;
+  //       },
+  //       onComplete: (path) async {
+  //         model.isDownloaded!.value = true;
+  //         model.progress!.value = 1.0;
+  //         await _dbService.saveModel(model);
+  //         CustomSnackBar.showSuccessSnackbar(message: '${model.name} downloaded successfully');
+  //       },
+  //       onError: (error) {
+  //         DevLogs.logError('Error Failed to download ${model.name}: $error');
+  //         CustomSnackBar.showErrorSnackbar(message: 'Failed to download ${model.name}: $error');
+  //       },
+  //     );
+  //   } catch (e) {
+  //     DevLogs.logError('Error Failed to initiate download: $e');
+  //     CustomSnackBar.showErrorSnackbar(message: 'Failed to initiate download: $e');
+  //   }
+  // }
+  //
+  // Future<void> deleteModel(AIModel model) async {
+  //   try {
+  //     // Delete the model's file if it exists
+  //     final path = await _downloadService.getDownloadPath(model.filename!);
+  //     final file = File(path);
+  //     if (await file.exists()) {
+  //       await file.delete();
+  //     }
+  //
+  //     // Delete the model's record from the database
+  //     await _dbService.deleteModel(model);
+  //
+  //     // Update the model state to reflect the deletion
+  //     model.isDownloaded!.value = false;
+  //     model.progress!.value = 0.0;
+  //
+  //     // Optionally, reload the models from the database to update the UI
+  //     await loadModels();
+  //
+  //     CustomSnackBar.showSuccessSnackbar(message: '${model.name} deleted successfully');
+  //   } catch (e) {
+  //     DevLogs.logError('Error Failed to delete ${model.name}: $e');
+  //     CustomSnackBar.showErrorSnackbar(message: 'Failed to delete ${model.name}: $e');
+  //   }
+  // }
 
   void setSearchQuery(String query) {
     searchQuery.value = query;

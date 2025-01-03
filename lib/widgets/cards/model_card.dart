@@ -16,7 +16,7 @@ class AIModelCard extends StatefulWidget {
 }
 
 class _AIModelCardState extends State<AIModelCard> {
-  final DownloadManager _downloadManager = Get.find<DownloadManager>();
+  final DownloadController _downloadManager = Get.find<DownloadController>();
 
   @override
   Widget build(BuildContext context) {
@@ -191,8 +191,8 @@ class _AIModelCardState extends State<AIModelCard> {
                     children: [
                       GeneralButton(
                           onTap: (){
-                            if (_downloadManager.isDownloading(widget.model.id)) {
-                              _downloadManager.cancelDownload(widget.model);
+                            if (_downloadManager.isDownloading(widget.model)) {
+                              _downloadManager.cancelDownload(widget.model.id);
                             } else {
                               _downloadManager.startDownload(widget.model);
                             }
@@ -202,14 +202,14 @@ class _AIModelCardState extends State<AIModelCard> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                _downloadManager.isDownloading(widget.model.id)
+                                _downloadManager.isDownloading(widget.model)
                                     ? Icons.stop
                                     : Icons.download,
                                 color: Theme.of(context).primaryColor,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                _downloadManager.isDownloading(widget.model.id)
+                                _downloadManager.isDownloading(widget.model)
                                     ? 'Cancel'
                                     : 'Download',
                                 style: TextStyle(

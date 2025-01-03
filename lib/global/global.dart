@@ -8,3 +8,11 @@ enum ModelOrigin {
   local,
   hf,
 }
+
+enum DownloadStatus {
+  pending,
+  inProgress,
+  completed,
+  failed,
+  canceled
+}

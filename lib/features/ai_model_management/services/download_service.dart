@@ -1,71 +1,95 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:background_downloader/background_downloader.dart';
 
 class DownloadService {
-  static const int maxRetries = 3;
-  static const int timeoutSeconds = 30;
+  final FileDownloader _downloader = FileDownloader();
 
-  Future<String> getDownloadPath(String filename) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = join(dir.path, 'models');
-    await Directory(path).create(recursive: true);
-    return join(path, filename);
+  Future<void> initialize() async {
+    await _downloader.trackTasks();
+    _configureNotifications();
   }
 
-  Future<void> downloadModel({
+  void _configureNotifications() {
+    _downloader.configureNotification(
+      running: TaskNotification(
+        'Downloading',
+        'File: {filename} - {progress}%',
+      ),
+      complete: TaskNotification(
+        'Download Complete',
+        'File: {filename}',
+      ),
+      error: TaskNotification(
+        'Download Failed',
+        'File: {filename} - {error}',
+      ),
+      paused: TaskNotification(
+        'Download Paused',
+        'File: {filename} - Tap to resume',
+      ),
+      progressBar: true,
+    );
+  }
+
+  Future<TaskStatus> downloadFile({
     required String url,
     required String filename,
-    required Function(double) onProgress,
-    required Function(String) onComplete,
-    required Function(String) onError,
+    required String directory,
+    Map<String, String>? headers,
+    bool requiresWiFi = true,
+    int retries = 3,
+    bool allowPause = true,
+    String? metadata,
+    Function(double)? onProgress,
+    Function(TaskStatus)? onStatus,
   }) async {
-    int attempts = 0;
-    while (attempts < maxRetries) {
-      try {
-        final client = http.Client();
-        final response = await client.head(Uri.parse(url)).timeout(const Duration(seconds: timeoutSeconds));
+    final task = DownloadTask(
+      url: url,
+      filename: filename,
+      directory: directory,
+      baseDirectory: BaseDirectory.applicationDocuments,
+      headers: headers,
+      requiresWiFi: requiresWiFi,
+      retries: retries,
+      allowPause: allowPause,
+      metaData: metadata ?? '',
+      updates: Updates.statusAndProgress,
+    );
 
-        final totalSize = int.parse(response.headers['content-length'] ?? '0');
-        if (totalSize == 0) throw Exception('Invalid file size');
+    final result = await _downloader.download(
+      task,
+      onProgress: onProgress,
+      onStatus: (status) => onStatus?.call(status),
+    );
 
-        final downloadPath = await getDownloadPath(filename);
-        final file = File(downloadPath);
-        final sink = file.openWrite();
-
-        final streamedResponse = await client
-            .send(http.Request('GET', Uri.parse(url)))
-            .timeout(const Duration(seconds: timeoutSeconds));
-
-        int received = 0;
-        await streamedResponse.stream.listen(
-              (chunk) {
-            sink.add(chunk);
-            received += chunk.length;
-            onProgress(received / totalSize);
-          },
-          onDone: () async {
-            await sink.close();
-            onComplete(downloadPath);
-          },
-          onError: (error) async {
-            await sink.close();
-            throw Exception('Stream error: $error');
-          },
-          cancelOnError: true,
-        ).asFuture();
-
-        client.close();
-        return;
-      } catch (e) {
-        attempts++;
-        if (attempts >= maxRetries) {
-          onError('Download failed after $maxRetries attempts: $e');
-        }
-        await Future.delayed(Duration(seconds: attempts * 2)); // Exponential backoff
-      }
-    }
+    return result.status;
   }
+
+  Future<bool> enqueueDownload(DownloadTask task) async {
+    return await _downloader.enqueue(task);
+  }
+
+  Future<void> pauseDownload(DownloadTask task) async {
+    await _downloader.pause(task);
+  }
+
+  Future<void> resumeDownload(DownloadTask task) async {
+    await _downloader.resume(task);
+  }
+
+  Future<void> cancelDownload(String taskId) async {
+    await _downloader.cancelTaskWithId(taskId);
+  }
+
+  Future<List<TaskRecord>> getAllDownloads() async {
+    return await _downloader.database.allRecords();
+  }
+
+  Future<TaskRecord?> getDownloadStatus(String taskId) async {
+    return await _downloader.database.recordForId(taskId);
+  }
+
+  Stream<TaskUpdate> get downloadUpdates => _downloader.updates;
+
 }
