@@ -1,14 +1,26 @@
+import 'dart:io';
 import 'dart:math';
 
+import 'package:path_provider/path_provider.dart';
+
 class DownloadHelper {
-  static String getFileSize(int bytes) {
-    if (bytes <= 0) return "0 B";
-    const suffixes = ["B", "KB", "MB", "GB", "TB"];
-    var i = (log(bytes) / log(1024)).floor();
-    return '${(bytes / pow(1024, i)).toStringAsFixed(2)} ${suffixes[i]}';
+  // Get the downloads directory
+  static Future<String> get downloadPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    final path = '${directory.path}/models';
+    final dir = Directory(path);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return path;
   }
 
-  static String getDownloadSpeed(double bytesPerSecond) {
-    return '${getFileSize(bytesPerSecond.toInt())}/s';
+  // Sanitize filename to remove invalid characters
+  static String sanitizeFilename(String filename) {
+    // Remove any path separators and invalid filename characters
+    return filename
+        .replaceAll(RegExp(r'[/\\?%*:|"<>]'), '')
+        .replaceAll(RegExp(r'\s+'), '_');
   }
+
 }

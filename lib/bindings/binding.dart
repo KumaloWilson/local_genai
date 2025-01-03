@@ -12,7 +12,7 @@ class InitialBinding extends Bindings {
     try {
       // Initialize services as singletons
       final databaseService = Get.put<DatabaseService>(DatabaseService(), permanent: true);
-      final downloadService = Get.put<DownloadService>(DownloadService(), permanent: true);
+      Get.put<DownloadService>(DownloadService(), permanent: true);
 
       // Initialize database
       await databaseService.init();
@@ -24,7 +24,7 @@ class InitialBinding extends Bindings {
       );
 
       Get.put(
-          DownloadController(Get.find<DownloadService>(), Get.find<DatabaseService>()),
+          DownloadController(),
           permanent: true
       );
 

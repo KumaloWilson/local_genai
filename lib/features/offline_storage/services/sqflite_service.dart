@@ -120,7 +120,7 @@ class DatabaseService {
     }
   }
 
-  Future<void> saveModel(AIModel model) async {
+  static Future<void> saveModel(AIModel model) async {
     try {
       final db = _database;
       if (db == null) throw DatabaseException('Database not initialized');

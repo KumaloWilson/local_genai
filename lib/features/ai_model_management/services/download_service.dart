@@ -1,86 +1,101 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:background_downloader/background_downloader.dart';
+import 'package:local_gen_ai/features/ai_model_management/helper/download_helper.dart';
+import 'package:path/path.dart' as path;
+
+import '../models/ai_model.dart';
 
 class DownloadService {
-  final FileDownloader _downloader = FileDownloader();
+  static final FileDownloader _downloader = FileDownloader();
 
-  Future<void> initialize() async {
+  static Stream<TaskUpdate> get downloadUpdates => _downloader.updates;
+
+
+  // Initialize download notifications
+  // Initialize download notifications
+  static Future<void> initializeNotifications() async {
     await _downloader.trackTasks();
-    _configureNotifications();
-  }
 
-  void _configureNotifications() {
     _downloader.configureNotification(
-      running: TaskNotification(
-        'Downloading',
-        'File: {filename} - {progress}%',
+      running: const TaskNotification(
+        'Downloading AI Model',
+        '{filename}',
       ),
-      complete: TaskNotification(
-        'Download Complete',
-        'File: {filename}',
+      complete: const TaskNotification(
+          'Download Complete',
+          '{filename}'
       ),
-      error: TaskNotification(
-        'Download Failed',
-        'File: {filename} - {error}',
+      error: const TaskNotification(
+          'Download Failed',
+          'There was an error downloading the model'
       ),
-      paused: TaskNotification(
-        'Download Paused',
-        'File: {filename} - Tap to resume',
+      paused: const TaskNotification(
+          'Download Paused',
+          '{filename}'
       ),
       progressBar: true,
     );
   }
 
-  Future<TaskStatus> downloadFile({
-    required String url,
-    required String filename,
-    required String directory,
-    Map<String, String>? headers,
-    bool requiresWiFi = true,
-    int retries = 3,
-    bool allowPause = true,
-    String? metadata,
-    Function(double)? onProgress,
-    Function(TaskStatus)? onStatus,
-  }) async {
-    final task = DownloadTask(
-      url: url,
-      filename: filename,
-      directory: directory,
-      baseDirectory: BaseDirectory.applicationDocuments,
-      headers: headers,
-      requiresWiFi: requiresWiFi,
-      retries: retries,
-      allowPause: allowPause,
-      metaData: metadata ?? '',
-      updates: Updates.statusAndProgress,
-    );
 
-    final result = await _downloader.download(
-      task,
-      onProgress: onProgress,
-      onStatus: (status) => onStatus?.call(status),
-    );
+  // Create download task for a model
+  static Future<DownloadTask> createDownloadTask(AIModel model) async {
+    final downloadPath = await DownloadHelper.downloadPath;
+    // Sanitize the filename and ensure it has the correct extension
+    final filename = DownloadHelper.sanitizeFilename(model.name);
 
-    return result.status;
+    // Create the task with sanitized filename
+    return DownloadTask(
+        url: model.downloadUrl.value,
+        filename: filename,
+        directory: downloadPath,
+        baseDirectory: BaseDirectory.applicationDocuments,
+        updates: Updates.statusAndProgress,
+        allowPause: true,
+        retries: 3,
+        metaData: model.toJson().toString()
+    );
   }
 
-  Future<bool> enqueueDownload(DownloadTask task) async {
-    return await _downloader.enqueue(task);
+  // Start a download
+  static Future<void> startDownload(
+      DownloadTask task,
+      Function(double) onProgress,
+      Function() onComplete,
+      Function(String) onError,
+      ) async {
+    try {
+      await _downloader.download(
+        task,
+        onProgress: (progress) => onProgress(progress),
+        onStatus: (status) {
+          if (status == TaskStatus.complete) {
+            onComplete();
+          } else if (status == TaskStatus.failed) {
+            onError('Download failed');
+          }
+        },
+      );
+    } catch (e) {
+      onError(e.toString());
+    }
   }
 
-  Future<void> pauseDownload(DownloadTask task) async {
+  // Cancel a download
+  static Future<void> cancelDownload(DownloadTask task) async {
+    await _downloader.cancelTaskWithId(task.taskId);
+  }
+
+  static Future<void> pauseDownload(DownloadTask task) async {
     await _downloader.pause(task);
   }
 
-  Future<void> resumeDownload(DownloadTask task) async {
+  static Future<void> resumeDownload(DownloadTask task) async {
     await _downloader.resume(task);
   }
 
-  Future<void> cancelDownload(String taskId) async {
-    await _downloader.cancelTaskWithId(taskId);
-  }
 
   Future<List<TaskRecord>> getAllDownloads() async {
     return await _downloader.database.allRecords();
@@ -90,6 +105,30 @@ class DownloadService {
     return await _downloader.database.recordForId(taskId);
   }
 
-  Stream<TaskUpdate> get downloadUpdates => _downloader.updates;
+  // Check if a model file exists
+  static Future<bool> modelExists(AIModel model) async {
+    final downloadPath = await DownloadHelper.downloadPath;
+    final filename = DownloadHelper.sanitizeFilename(model.name);
+    final file = File(path.join(downloadPath, filename));
+    return file.exists();
+  }
 
+  // Delete a downloaded model
+  static Future<void> deleteModel(AIModel model) async {
+    final downloadPath = await DownloadHelper.downloadPath;
+    final filename = DownloadHelper.sanitizeFilename(model.name);
+    final file = File(path.join(downloadPath, filename));
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  // Get the file path for a model
+  static Future<String> getModelPath(AIModel model) async {
+    final downloadPath = await DownloadHelper.downloadPath;
+    final filename = DownloadHelper.sanitizeFilename(model.name);
+    return path.join(downloadPath, filename);
+  }
 }
+
+
