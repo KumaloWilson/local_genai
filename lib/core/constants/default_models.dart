@@ -427,7 +427,62 @@ class DefaultModels{
         "oid": "72f2510b5868d1141617aa16cfc4c4a61ec77262",
         "canFitInStorage": true
       }
+    },
+
+    {
+      "id": "sample_download",
+      "author": "Watkay",
+      "name": "Sample Download",
+      "type": "Sample",
+      "description": "Question Answering, Summarization, Reasoning",
+      "size": 17000000,
+      "params": 2614341888,
+      "isDownloaded": false,
+      "downloadUrl": "https://file-examples.com/storage/fe6a903be26776da396efab/2017/04/file_example_MP4_1920_18MG.mp4",
+      "hfUrl": "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF",
+      "progress": 0,
+      "filename": "gemma-2-2b-it-Q6_K.gguf",
+      "isLocal": false,
+      "origin": "default",
+      "defaultChatTemplate": {
+        'name': 'gemmaIt',
+        'addGenerationPrompt': true,
+        'systemPrompt': 'You are a helpful conversational chat assistant. You are precise, concise, and casual.',
+        'chatTemplate': '''
+        You are GemmaIt, a conversational assistant focused on helping users with IT-related questions.
+        Keep your answers simple, clear, and to the point, ensuring users get the information they need quickly.
+      ''',
+      },
+      "chatTemplate": {
+        'name': 'gemmaIt',
+        'addGenerationPrompt': true,
+        'systemPrompt': 'You are a helpful conversational chat assistant. You are precise, concise, and casual.',
+        'chatTemplate': '''
+        You are GemmaIt, a conversational assistant focused on helping users with IT-related questions.
+        Keep your answers simple, clear, and to the point, ensuring users get the information they need quickly.
+      ''',
+      },
+      "defaultCompletionSettings": {
+        "n_predict": 500,
+        "temperature": 0.0,
+        "penalty_repeat": 1.0,
+        "stop": ["<end_of_turn>"]
+      },
+      "completionSettings": {
+        "n_predict": 500,
+        "temperature": 0.0,
+        "penalty_repeat": 1.0,
+        "stop": ["<end_of_turn>"]
+      },
+      "hfModelFile": {
+        "rfilename": "gemma-2-2b-it-Q6_K.gguf",
+        "url": "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q6_K.gguf",
+        "size": 2151393120,
+        "oid": "72f2510b5868d1141617aa16cfc4c4a61ec77262",
+        "canFitInStorage": true
+      }
     }
+
   ];
 
 }

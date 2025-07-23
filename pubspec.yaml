@@ -28,6 +28,9 @@ dependencies:
   path: ^1.9.0
   sqflite: ^2.4.1
   background_downloader: ^8.8.1
+  connectivity_plus: ^6.1.1
+  disk_space_update: ^0.0.2
+  simple_animation_progress_bar: ^1.8.2
 
 dev_dependencies:
   flutter_test:

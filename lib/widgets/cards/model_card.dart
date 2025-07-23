@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
+import 'package:simple_animation_progress_bar/simple_animation_progress_bar.dart';
 
 import '../../features/ai_model_management/controllers/download_manager.dart';
 import '../../features/ai_model_management/models/ai_model.dart';
@@ -46,8 +47,7 @@ class _AIModelCardState extends State<AIModelCard> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              _downloadManager.deleteModel(widget.model);
+
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
@@ -64,47 +64,19 @@ class _AIModelCardState extends State<AIModelCard> {
         color: Colors.blue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Obx(() {
-            final progress = widget.model.progress.value;
-            if (progress > 0 && progress < 1) {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${(progress * 100).toInt()}%',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 2,
-                    backgroundColor: Colors.grey.shade200,
-                  ),
-                ],
-              );
-            }
-            return Icon(
-              Icons.smart_toy,
-              size: 32,
-              color: widget.model.isDownloaded.value
-                  ? Theme.of(context).primaryColor
-                  : Colors.grey.shade400,
-            ).animate(
-              onPlay: (controller) => controller.repeat(),
-            ).rotate(
-              duration: 2000.ms,
-              begin: 0,
-              end: 0.1,
-            );
-          }),
-        ],
-      ),
+      child: Icon(
+          Icons.smart_toy,
+          size: 32,
+          color: widget.model.isDownloaded.value
+              ? Theme.of(context).primaryColor
+              : Colors.grey.shade400,
+        ).animate(
+          onPlay: (controller) => controller.repeat(),
+        ).rotate(
+          duration: 2000.ms,
+          begin: 0,
+          end: 0.1,
+       ),
     );
   }
 
@@ -212,36 +184,98 @@ class _AIModelCardState extends State<AIModelCard> {
         )
       ],
     )
-        : Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        GeneralButton(
-            onTap: _handleDownloadTap,
-            btnColor: Colors.transparent,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  _downloadManager.isDownloading(widget.model)
-                      ? Icons.stop
-                      : Icons.download,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _downloadManager.isDownloading(widget.model)
-                      ? 'Cancel'
-                      : 'Download',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+        : Column(
+          children: [
+            Obx(() {
+              final progress = widget.model.progress.value;
+              final speed = _downloadManager.getDownloadSpeed(widget.model.id);
+              if (progress > 0 && progress < 1) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SimpleAnimationProgressBar(
+                            height: 10,
+                            width: Get.width * 0.8,
+                            backgroundColor: Theme.of(context).canvasColor,
+                            foregrondColor: Theme.of(context).primaryColor,
+                            ratio: progress,
+                            direction: Axis.horizontal,
+                            curve: Curves.fastLinearToSlowEaseIn,
+                            duration: const Duration(seconds: 3),
+                            borderRadius: BorderRadius.circular(10),
+                            gradientColor: LinearGradient(
+                                colors: [Theme.of(context).primaryColor.withGreen(9), Theme.of(context).primaryColor]),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context).primaryColor,
+                                offset: const Offset(
+                                  1.0,
+                                  1.0,
+                                ),
+                                blurRadius: 2.0,
+                                spreadRadius: 2.0,
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          width: 8,
+                        ),
+                        Text(
+                          '${speed}M/s'
+                        )
+                      ],
+                    )
+                  ],
+                );
+              }
+              return Container();
+            }),
+
+            Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+            GeneralButton(
+                onTap: _handleDownloadTap,
+                btnColor: Colors.transparent,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _downloadManager.isDownloading(widget.model)
+                          ? Icons.stop
+                          : Icons.download,
+                      color: _downloadManager.isDownloading(widget.model)
+                          ? Colors.redAccent
+                          : Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _downloadManager.isDownloading(widget.model)
+                          ? 'Cancel'
+                          : 'Download',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    )
+                  ],
                 )
-              ],
             )
-        )
-      ],
-    ),
+                  ],
+                ),
+          ],
+        ),
     );
   }
 

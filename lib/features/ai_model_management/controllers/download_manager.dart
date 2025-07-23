@@ -32,7 +32,7 @@ class DownloadController extends GetxController {
   }
 
   Future<void> _initializeDownloader() async {
-    await DownloadService.initializeNotifications();
+    await DownloadService.initialize();
   }
 
   void _setupDownloadListener() {
@@ -41,7 +41,11 @@ class DownloadController extends GetxController {
         _handleStatusUpdate(update);
       } else if (update is TaskProgressUpdate) {
         _handleProgressUpdate(update);
+        DevLogs.logInfo('UPDATE DETECTED');
       }
+
+      DevLogs.logInfo('UPDATE DETECTED');
+      update.task.updates;
     });
   }
 
@@ -49,7 +53,17 @@ class DownloadController extends GetxController {
     if (isDownloading(model)) return;
 
     try {
-      final task = await DownloadService.createDownloadTask(model);
+      final task = DownloadTask(
+        url: model.downloadUrl.value,
+        taskId: model.id,
+        filename: model.filename,
+        allowPause: true,
+        retries: 3,
+        displayName: model.name,
+        creationTime: DateTime.now(),
+        metaData: model.toJson().toString(),
+      );
+
       _activeDownloads[model.id] = task;
       downloads.add(model);
       _downloadProgress[model.id] = 0.0;
@@ -58,12 +72,12 @@ class DownloadController extends GetxController {
 
 
       await DownloadService.startDownload(
-        task,
-            (progress) {
+        task: task,
+        onProgress: (progress) {
           _downloadProgress[model.id] = progress;
           model.progress.value = progress;
         },
-            () async {
+        onComplete: () async {
           model.isDownloaded.value = true;
           model.progress.value = 1.0;
           _activeDownloads.remove(model.id);
@@ -74,7 +88,7 @@ class DownloadController extends GetxController {
           CustomSnackBar.showSuccessSnackbar(message: '${model.name} has been downloaded successfully',);
 
         },
-            (error) {
+        onError: (error) {
           model.progress.value = 0.0;
           _activeDownloads.remove(model.id);
           _downloadProgress.remove(model.id);
@@ -112,39 +126,11 @@ class DownloadController extends GetxController {
     }
   }
 
-  Future<void> deleteModel(AIModel model) async {
-    try {
-      await DownloadService.deleteModel(model);
-      model.isDownloaded.value = false;
-      model.progress.value = 0.0;
-      Get.snackbar(
-        'Model Deleted',
-        '${model.name} has been deleted',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete model: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  Future<void> checkDownloadedModels(List<AIModel> models) async {
-    for (final model in models) {
-      model.isDownloaded.value = await DownloadService.modelExists(model);
-    }
-  }
-
   void _handleProgressUpdate(TaskProgressUpdate update) {
     final modelId = update.task.taskId;
     _downloadProgress[modelId] = update.progress;
-
-    if (update.networkSpeed > 0) {
-      _downloadSpeed[modelId] = update.networkSpeed;
-      _timeRemaining[modelId] = update.timeRemaining;
-    }
+    _downloadSpeed[modelId] = update.networkSpeed;
+    _timeRemaining[modelId] = update.timeRemaining;
   }
 
   Future<void> _handleStatusUpdate(TaskStatusUpdate update) async {

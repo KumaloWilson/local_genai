@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+.env
+script.py
 
 # Symbolication related
 app.*.symbols
